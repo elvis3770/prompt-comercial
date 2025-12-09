@@ -387,7 +387,7 @@ Voz: {"Mujer" if voice_gender == "female" else "Hombre"} (acento argentino)"""
 
 CONTEXTO VISUAL DE LA IMAGEN (PRODUCTO/ESCENA INICIAL):
 Esta es la imagen que se usará como referencia para generar el video.
-Debes combinar esta información visual con la acción/emoción del usuario.
+Debes combinar esta información visual con la acción/emoción/diálogo del usuario.
 
 Análisis de la imagen:
 - Posición del sujeto: {image_context.get('subject_position', 'N/A')}
@@ -397,10 +397,16 @@ Análisis de la imagen:
 - Mood/emoción: {image_context.get('mood', 'N/A')}
 - Elementos clave: {', '.join(image_context.get('elements', []))}
 
-IMPORTANTE: El prompt optimizado debe describir cómo se ve la imagen INICIALMENTE
-y luego incorporar la acción/movimiento que el usuario desea.
-Ejemplo: "Luxury perfume bottle centered on glossy surface [de la imagen], 
-camera slowly zooms in while maintaining elegant mood [acción del usuario]"
+IMPORTANTE: El prompt optimizado debe:
+1. Describir cómo se ve la imagen INICIALMENTE (estado inicial del frame)
+2. Incorporar la ACCIÓN que el usuario desea (movimiento, gesto)
+3. Incluir el DIÁLOGO exactamente como está (en español argentino)
+4. Especificar la VOZ ({voice_gender_text})
+
+Ejemplo de estructura:
+"[Descripción visual de la imagen inicial], [acción del personaje], 
+speaks to camera: '[diálogo exacto]' with {voice_gender_text} voice, 
+Argentine accent, [detalles técnicos de cámara y mood]"
 """
 
         user_prompt += """

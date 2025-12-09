@@ -471,6 +471,10 @@ async def optimize_prompt(data: PromptOptimizationRequest):
         
         
         print("[DEBUG] About to call agent.refine_prompt...")
+        if data.image_context:
+            print(f"[DEBUG] image_context received: {list(data.image_context.keys())}")
+        else:
+            print("[DEBUG] No image_context provided")
         import sys; sys.stdout.flush()
         
         optimized_data = await agent.refine_prompt(

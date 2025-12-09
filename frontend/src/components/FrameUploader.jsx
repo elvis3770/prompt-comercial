@@ -4,7 +4,7 @@ import './FrameUploader.css';
 
 const API_BASE = 'http://localhost:8003';
 
-export default function FrameUploader({ onAnalysisComplete }) {
+export default function FrameUploader({ onAnalysisComplete, isFirstScene = false }) {
     const [isDragging, setIsDragging] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [preview, setPreview] = useState(null);
@@ -67,7 +67,8 @@ export default function FrameUploader({ onAnalysisComplete }) {
                 },
                 body: JSON.stringify({
                     image_data: imageData,
-                    mime_type: mimeType
+                    mime_type: mimeType,
+                    is_first_scene: isFirstScene  // Send flag to backend
                 })
             });
 
@@ -99,7 +100,7 @@ export default function FrameUploader({ onAnalysisComplete }) {
 
     return (
         <div className="frame-uploader">
-            <h4>Frame Anterior (Continuidad)</h4>
+            <h4>{isFirstScene ? 'Imagen del Producto' : 'Frame Anterior (Continuidad)'}</h4>
 
             {!preview ? (
                 <div
@@ -110,7 +111,7 @@ export default function FrameUploader({ onAnalysisComplete }) {
                     onClick={() => fileInputRef.current?.click()}
                 >
                     <Upload size={32} />
-                    <p>Arrastra el ultimo frame aqui</p>
+                    <p>{isFirstScene ? 'Arrastra la imagen del producto aqui' : 'Arrastra el ultimo frame aqui'}</p>
                     <span>o haz clic para seleccionar</span>
                     <input
                         ref={fileInputRef}
@@ -145,7 +146,7 @@ export default function FrameUploader({ onAnalysisComplete }) {
                 <div className="analysis-results">
                     <div className="analysis-header">
                         <CheckCircle size={16} />
-                        <span>Analisis de Continuidad</span>
+                        <span>{isFirstScene ? 'Analisis del Producto' : 'Analisis de Continuidad'}</span>
                     </div>
 
                     <div className="analysis-grid">
@@ -183,7 +184,14 @@ export default function FrameUploader({ onAnalysisComplete }) {
                                 </div>
                             </div>
                         )}
-                        {analysis.next_scene_suggestion && (
+                        {/* Show video_prompt for first scene, next_scene_suggestion for others */}
+                        {isFirstScene && analysis.video_prompt && (
+                            <div className="analysis-item suggestion">
+                                <label>Prompt Generado</label>
+                                <p>{analysis.video_prompt}</p>
+                            </div>
+                        )}
+                        {!isFirstScene && analysis.next_scene_suggestion && (
                             <div className="analysis-item suggestion">
                                 <label>Sugerencia Siguiente Escena</label>
                                 <p>{analysis.next_scene_suggestion}</p>

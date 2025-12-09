@@ -5,7 +5,9 @@ Herramienta de optimización de prompts para generación de videos comerciales c
 ## 🎯 Características
 
 - ✅ **Optimización de prompts con IA** - Mejora automática de descripciones usando Gemini (gratis vía WebAI)
-- ✅ **Análisis de imágenes** - Analiza el último frame de una escena para mantener continuidad visual
+- ✅ **Análisis de imágenes con contexto** - Gemini analiza tu imagen del producto y combina esa información visual con tu acción deseada
+- ✅ **Optimización consciente de imagen** - Para la primera escena, el sistema recuerda lo que vio en la imagen al optimizar tu prompt
+- ✅ **Continuidad visual automática** - Analiza el último frame de escenas anteriores para mantener coherencia
 - ✅ **Interfaz drag-and-drop** - Sube imágenes fácilmente
 - ✅ **Preview de optimizaciones** - Revisa cambios antes de aplicar
 - ✅ **Modo dual** - WebAI (gratis) para texto + API oficial (visión) para imágenes

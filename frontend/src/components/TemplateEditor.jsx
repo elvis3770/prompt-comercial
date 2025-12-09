@@ -15,6 +15,7 @@ export default function TemplateEditor() {
     const [optimizationPreview, setOptimizationPreview] = useState(null);
     const [optimizingScene, setOptimizingScene] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [imageAnalysis, setImageAnalysis] = useState({});  // Store image analysis per scene
     const [template, setTemplate] = useState({
         name: '',
         description: '',
@@ -130,12 +131,21 @@ export default function TemplateEditor() {
         setLoading(true);
 
         try {
-            const result = await optimizePrompt({
+            // Prepare optimization request
+            const optimizationRequest = {
                 action: scene.prompt || '',
                 emotion: scene.emotion || 'neutral',
+                dialogue: scene.dialogue || '',
                 product_tone: template.brand_guidelines.mood || 'professional',
                 scene_type: 'general'
-            });
+            };
+
+            // Add image context if this is first scene and we have analysis
+            if (sceneIndex === 0 && imageAnalysis[0]) {
+                optimizationRequest.image_context = imageAnalysis[0];
+            }
+
+            const result = await optimizePrompt(optimizationRequest);
 
             if (result.ok) {
                 // Format preview with original and optimized data
@@ -405,6 +415,15 @@ export default function TemplateEditor() {
                                                 rows="3"
                                             />
                                         </div>
+                                        <div className="form-group full-width">
+                                            <label>Diálogo (Español Argentino)</label>
+                                            <textarea
+                                                value={scene.dialogue || ''}
+                                                onChange={(e) => updateScene(index, 'dialogue', e.target.value)}
+                                                placeholder="Ej: 'Este es el aroma de la elegancia, che'"
+                                                rows="2"
+                                            />
+                                        </div>
                                         <div className="form-group">
                                             <label>Emoción</label>
                                             <select
@@ -475,13 +494,29 @@ export default function TemplateEditor() {
 
                                     {/* Frame Uploader para referencia visual */}
                                     <FrameUploader
+                                        isFirstScene={index === 0}
                                         onAnalysisComplete={(analysis) => {
-                                            const continuityContext = analysis.next_scene_suggestion || '';
-                                            const currentPrompt = scene.prompt || '';
-                                            if (continuityContext && !currentPrompt.includes('[CONTINUITY]')) {
-                                                updateScene(index, 'prompt',
-                                                    `[CONTINUITY: ${continuityContext}] ${currentPrompt}`
-                                                );
+                                            // Save analysis for optimization
+                                            setImageAnalysis(prev => ({
+                                                ...prev,
+                                                [index]: analysis
+                                            }));
+
+                                            if (index === 0) {
+                                                // First scene: Use video_prompt to replace entire prompt
+                                                const videoPrompt = analysis.video_prompt || '';
+                                                if (videoPrompt) {
+                                                    updateScene(index, 'prompt', videoPrompt);
+                                                }
+                                            } else {
+                                                // Subsequent scenes: Add continuity suggestion
+                                                const continuityContext = analysis.next_scene_suggestion || '';
+                                                const currentPrompt = scene.prompt || '';
+                                                if (continuityContext && !currentPrompt.includes('[CONTINUITY]')) {
+                                                    updateScene(index, 'prompt',
+                                                        `[CONTINUITY: ${continuityContext}] ${currentPrompt}`
+                                                    );
+                                                }
                                             }
                                         }}
                                     />

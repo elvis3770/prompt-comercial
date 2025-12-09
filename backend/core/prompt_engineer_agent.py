@@ -187,7 +187,8 @@ Respond in JSON format:
         self,
         user_input: dict,
         master_template: dict,
-        scene: dict
+        scene: dict,
+        image_context: dict = None  # Visual analysis from image (for first scene)
     ) -> dict:
         """
         Refina y optimiza un prompt usando el agente de Gemini
@@ -196,6 +197,7 @@ Respond in JSON format:
             user_input: Campos mutables del usuario (dialogue, action, emotion)
             master_template: Template maestro del proyecto
             scene: Datos completos de la escena
+            image_context: Visual analysis from product image (optional, for first scene)
             
         Returns:
             dict con campos optimizados y metadata de optimización
@@ -204,8 +206,8 @@ Respond in JSON format:
             # 1. Construir prompt del sistema para el agente
             system_prompt = self._build_system_prompt(master_template, scene)
             
-            # 2. Construir prompt del usuario
-            user_prompt = self._build_user_prompt(user_input, scene)
+            # 2. Construir prompt del usuario (with image context if available)
+            user_prompt = self._build_user_prompt(user_input, scene, image_context)
             
             # 3. Combine prompts
             full_prompt = f"{system_prompt}\n\n{user_prompt}"
@@ -362,7 +364,7 @@ IMPORTANTE:
 
         return system_prompt
     
-    def _build_user_prompt(self, user_input: dict, scene: dict) -> str:
+    def _build_user_prompt(self, user_input: dict, scene: dict, image_context: dict = None) -> str:
         """
         Construye el prompt del usuario con los datos a optimizar
         """
@@ -370,11 +372,36 @@ IMPORTANTE:
         emotion = user_input.get("emotion", scene.get("emotion", ""))
         dialogue = user_input.get("dialogue", "")
         
+        # Build base prompt
         user_prompt = f"""ENTRADA DEL USUARIO PARA OPTIMIZAR:
 
 Acción: {action}
 Emoción: {emotion}
-Diálogo: {dialogue if dialogue else "N/A"}
+Diálogo: {dialogue if dialogue else "N/A"}"""
+
+        # Add visual context if this is first scene with image analysis
+        if image_context:
+            user_prompt += f"""
+
+CONTEXTO VISUAL DE LA IMAGEN (PRODUCTO/ESCENA INICIAL):
+Esta es la imagen que se usará como referencia para generar el video.
+Debes combinar esta información visual con la acción/emoción del usuario.
+
+Análisis de la imagen:
+- Posición del sujeto: {image_context.get('subject_position', 'N/A')}
+- Ángulo de cámara sugerido: {image_context.get('camera_angle', 'N/A')}
+- Iluminación: {image_context.get('lighting', 'N/A')}
+- Colores dominantes: {', '.join(image_context.get('colors', []))}
+- Mood/emoción: {image_context.get('mood', 'N/A')}
+- Elementos clave: {', '.join(image_context.get('elements', []))}
+
+IMPORTANTE: El prompt optimizado debe describir cómo se ve la imagen INICIALMENTE
+y luego incorporar la acción/movimiento que el usuario desea.
+Ejemplo: "Luxury perfume bottle centered on glossy surface [de la imagen], 
+camera slowly zooms in while maintaining elegant mood [acción del usuario]"
+"""
+
+        user_prompt += """
 
 Por favor, optimiza estos campos aplicando todas las tareas descritas en el prompt del sistema.
 Recuerda responder ÚNICAMENTE con el objeto JSON, sin texto adicional."""

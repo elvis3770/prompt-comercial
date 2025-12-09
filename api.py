@@ -109,6 +109,7 @@ class PromptOptimizationRequest(BaseModel):
     product_tone: Optional[str] = None
     scene_type: Optional[str] = "general"
     camera_specs: Optional[dict] = None
+    image_context: Optional[dict] = None  # Visual analysis from image (for first scene)
 
 class PromptValidationRequest(BaseModel):
     """Request model for prompt validation"""
@@ -468,13 +469,15 @@ async def optimize_prompt(data: PromptOptimizationRequest):
             "dialogue": data.dialogue or ""
         }
         
+        
         print("[DEBUG] About to call agent.refine_prompt...")
         import sys; sys.stdout.flush()
         
         optimized_data = await agent.refine_prompt(
             user_input=user_input,
             master_template=minimal_template,
-            scene=scene
+            scene=scene,
+            image_context=data.image_context  # Pass visual analysis if available
         )
         
         print("[DEBUG] refine_prompt completed!")
@@ -540,6 +543,7 @@ class FrameAnalysisRequest(BaseModel):
     image_data: str  # Base64 encoded image
     mime_type: str = "image/jpeg"
     scene_context: Optional[str] = None  # Optional context about the scene
+    is_first_scene: bool = False  # True if this is the first scene (product image)
 
 @app.post("/api/prompts/analyze-frame")
 async def analyze_frame_for_continuity(data: FrameAnalysisRequest):
@@ -571,7 +575,38 @@ async def analyze_frame_for_continuity(data: FrameAnalysisRequest):
         # Use Gemini 2.5 Flash for vision (has available quota)
         model = genai.GenerativeModel('gemini-2.5-flash')
         
-        analysis_prompt = """Analyze this video frame for scene continuity:
+        # Different prompts for first scene (product) vs continuity
+        if data.is_first_scene:
+            # FIRST SCENE: Describe the product for video generation
+            analysis_prompt = """Analyze this product image and create a detailed video prompt description:
+
+You are analyzing the MAIN PRODUCT/INGREDIENT for a commercial video. Describe it in detail for AI video generation.
+
+Provide:
+1. Product type and appearance
+2. Key visual features (shape, color, texture, materials)
+3. Suggested camera angle for hero shot
+4. Recommended lighting style
+5. Mood/emotion the product conveys
+6. Background/setting suggestions
+7. Complete video prompt for first scene
+
+Format as JSON:
+{
+    "subject_position": "product placement description",
+    "camera_angle": "recommended shot type for product",
+    "lighting": "ideal lighting for this product",
+    "colors": ["dominant color1", "color2"],
+    "mood": "emotional tone product conveys",
+    "elements": ["product", "key feature1", "key feature2"],
+    "video_prompt": "Complete detailed prompt for generating first scene with this product"
+}
+
+Example video_prompt: "Luxury perfume bottle with gold cap and purple liquid, centered on glossy black surface, soft studio lighting from above, medium close-up shot, elegant and sophisticated mood, minimalist aesthetic"
+"""
+        else:
+            # SUBSEQUENT SCENES: Continuity analysis
+            analysis_prompt = """Analyze this video frame for scene continuity:
 
 IMPORTANT: This is the LAST FRAME of the current scene. You need to describe how the FIRST FRAME of the NEXT scene should look to maintain visual continuity.
 

@@ -371,13 +371,15 @@ IMPORTANTE:
         action = user_input.get("action", scene.get("action_details", ""))
         emotion = user_input.get("emotion", scene.get("emotion", ""))
         dialogue = user_input.get("dialogue", "")
+        voice_gender = user_input.get("voice_gender", "female")  # Default to female
         
         # Build base prompt
         user_prompt = f"""ENTRADA DEL USUARIO PARA OPTIMIZAR:
 
 Acción: {action}
 Emoción: {emotion}
-Diálogo: {dialogue if dialogue else "N/A"}"""
+Diálogo: {dialogue if dialogue else "N/A"}
+Voz: {"Mujer" if voice_gender == "female" else "Hombre"} (acento argentino)"""
 
         # Add visual context if this is first scene with image analysis
         if image_context:

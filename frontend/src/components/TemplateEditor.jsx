@@ -136,6 +136,7 @@ export default function TemplateEditor() {
                 action: scene.prompt || '',
                 emotion: scene.emotion || 'neutral',
                 dialogue: scene.dialogue || '',
+                voice_gender: scene.voice_gender || 'female',
                 product_tone: template.brand_guidelines.mood || 'professional',
                 scene_type: 'general'
             };
@@ -423,6 +424,16 @@ export default function TemplateEditor() {
                                                 placeholder="Ej: 'Este es el aroma de la elegancia, che'"
                                                 rows="2"
                                             />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Voz</label>
+                                            <select
+                                                value={scene.voice_gender || 'female'}
+                                                onChange={(e) => updateScene(index, 'voice_gender', e.target.value)}
+                                            >
+                                                <option value="female">Mujer</option>
+                                                <option value="male">Hombre</option>
+                                            </select>
                                         </div>
                                         <div className="form-group">
                                             <label>Emoción</label>

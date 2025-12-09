@@ -383,6 +383,9 @@ Voz: {"Mujer" if voice_gender == "female" else "Hombre"} (acento argentino)"""
 
         # Add visual context if this is first scene with image analysis
         if image_context:
+            # Define voice text for use in prompt
+            voice_gender_text = "female" if voice_gender == "female" else "male"
+            
             user_prompt += f"""
 
 CONTEXTO VISUAL DE LA IMAGEN (PRODUCTO/ESCENA INICIAL):

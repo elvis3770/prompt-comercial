@@ -43,40 +43,51 @@ class ContinuityTracker:
         """
         elements = []
         
-        # Extract character info
+        # Defensive check - ensure scene_analysis is a dict
+        if not isinstance(scene_analysis, dict):
+            logger.warning(f"scene_analysis is not a dict: {type(scene_analysis)}")
+            return elements
+        
+        # Extract character info (only if present)
         if scene_analysis.get('subject_position'):
             elements.append(ContinuityElement(
                 type='character',
                 description=scene_analysis.get('subject_position', ''),
-                position=scene_analysis.get('camera_angle', ''),
+                position=scene_analysis.get('camera_angle', 'unknown'),
                 details={
                     'mood': scene_analysis.get('mood', ''),
                     'lighting': scene_analysis.get('lighting', '')
                 }
             ))
         
-        # Extract product info
-        product_elements = [e for e in scene_analysis.get('elements', []) 
-                          if any(keyword in e.lower() for keyword in 
-                                ['bottle', 'perfume', 'product', 'package'])]
+        # Extract product info (safely handle missing 'elements' key)
+        scene_elements = scene_analysis.get('elements', [])
+        if isinstance(scene_elements, list):
+            product_elements = [e for e in scene_elements 
+                              if isinstance(e, str) and any(keyword in e.lower() for keyword in 
+                                    ['bottle', 'perfume', 'product', 'package', 'box', 'container'])]
+            
+            for product in product_elements:
+                elements.append(ContinuityElement(
+                    type='product',
+                    description=product,
+                    position='visible in frame',
+                    details={
+                        'colors': ', '.join(scene_analysis.get('colors', []))
+                    }
+                ))
         
-        for product in product_elements:
-            elements.append(ContinuityElement(
-                type='product',
-                description=product,
-                position='visible in frame',
-                details={
-                    'colors': ', '.join(scene_analysis.get('colors', []))
-                }
-            ))
+        # Extract environment info (always add, even if minimal)
+        lighting = scene_analysis.get('lighting', 'unknown')
+        colors = scene_analysis.get('colors', [])
+        colors_str = ', '.join(colors) if isinstance(colors, list) else ''
         
-        # Extract environment info
         elements.append(ContinuityElement(
             type='environment',
-            description=f"Lighting: {scene_analysis.get('lighting', 'unknown')}",
+            description=f"Lighting: {lighting}",
             position='overall scene',
             details={
-                'colors': ', '.join(scene_analysis.get('colors', [])),
+                'colors': colors_str,
                 'mood': scene_analysis.get('mood', '')
             }
         ))

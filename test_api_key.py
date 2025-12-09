@@ -3,7 +3,7 @@ Test if Gemini API key is valid with vision
 """
 import google.generativeai as genai
 
-API_KEY = "AIzaSyBjC2f1xIGu9l3fcSuRbfxGz0HzQgFRZHQ"
+API_KEY = 
 
 try:
     genai.configure(api_key=API_KEY)

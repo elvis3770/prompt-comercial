@@ -7,6 +7,7 @@ import { Plus, Trash2, Save, Upload, Eye, Sparkles } from 'lucide-react';
 import { createProject, optimizePrompt } from '../api/client';
 import PromptPreview from './PromptPreview';
 import FrameUploader from './FrameUploader';
+import ContinuityValidator from './ContinuityValidator';
 import './TemplateEditor.css';
 
 export default function TemplateEditor() {
@@ -531,6 +532,14 @@ export default function TemplateEditor() {
                                             }
                                         }}
                                     />
+
+                                    {/* Continuity Validator for scenes 2+ */}
+                                    {index > 0 && imageAnalysis[index - 1] && imageAnalysis[index] && (
+                                        <ContinuityValidator
+                                            previousElements={imageAnalysis[index - 1].tracked_elements || []}
+                                            currentElements={imageAnalysis[index].tracked_elements || []}
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>

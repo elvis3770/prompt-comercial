@@ -658,9 +658,26 @@ Format as JSON:
         except:
             analysis = {"raw_analysis": response_text}
         
+        # Extract continuity elements using tracker
+        from backend.core.continuity_tracker import ContinuityTracker
+        tracker = ContinuityTracker()
+        tracked_elements = tracker.extract_elements(analysis)
+        
+        # Convert to dict for JSON serialization
+        elements_dict = [
+            {
+                'type': e.type,
+                'description': e.description,
+                'position': e.position,
+                'details': e.details
+            }
+            for e in tracked_elements
+        ]
+        
         return {
             "ok": True,
             "analysis": analysis,
+            "tracked_elements": elements_dict,  # Add tracked elements
             "used_local_server": False  # Using official API for vision
         }
             
@@ -669,6 +686,62 @@ Format as JSON:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Frame analysis error: {str(e)}")
+
+# ============================================================
+# CONTINUITY VALIDATION
+# ============================================================
+
+class ContinuityValidationRequest(BaseModel):
+    """Request for continuity validation between scenes"""
+    previous_elements: List[Dict]
+    current_elements: List[Dict]
+
+@app.post("/api/continuity/validate")
+async def validate_continuity(data: ContinuityValidationRequest):
+    """
+    Validate continuity between two scenes
+    
+    Returns warnings and suggestions for maintaining visual consistency
+    """
+    try:
+        from backend.core.continuity_tracker import ContinuityTracker, ContinuityElement
+        
+        tracker = ContinuityTracker()
+        
+        # Convert dicts back to ContinuityElement objects
+        prev_elements = [
+            ContinuityElement(
+                type=e['type'],
+                description=e['description'],
+                position=e['position'],
+                details=e['details']
+            )
+            for e in data.previous_elements
+        ]
+        
+        curr_elements = [
+            ContinuityElement(
+                type=e['type'],
+                description=e['description'],
+                position=e['position'],
+                details=e['details']
+            )
+            for e in data.current_elements
+        ]
+        
+        # Validate continuity
+        validation_result = tracker.validate_continuity(prev_elements, curr_elements)
+        
+        return {
+            "ok": True,
+            **validation_result
+        }
+        
+    except Exception as e:
+        print(f"[ERROR] Continuity validation failed: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Validation error: {str(e)}")
 
 @app.get("/api/prompts/keywords/{model}")
 async def get_keywords(model: str = "veo-3.1"):
